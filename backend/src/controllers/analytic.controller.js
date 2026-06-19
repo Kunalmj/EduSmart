@@ -1,0 +1,228 @@
+import { Course } from "../models/course.model.js"
+import { Order } from "../models/order.model.js"
+import { User } from "../models/user.model.js"
+
+
+export const getAnalyitcsData= async()=>{
+    const totalUser = await User.countDocuments()
+    const totalCourse = await Course.countDocuments()
+
+    const salesData = await Order.aggregate([
+        {
+            $group:{
+                _id:null,
+                totalEntrollments:{$sum:1},
+                totalRevenue:{$sum:'$totalAmount'}
+            }
+        }
+    ])
+
+    const {
+        totalEntrollments=0,
+        totalRevenue=0
+    } = salesData[0]|| {}
+
+
+    return {
+        users:totalUser,
+        courses:totalCourse,
+        totalEntrollments,
+        totalRevenue
+    }
+}
+
+
+// total enrollment hain humarey pass 3
+// order 1 value-> 1
+// order 2 value-> 1
+// order 3 value-> 1
+
+// total enrollment = 3
+
+
+
+export const getAnalyticsDataController=async(req,res)=>{
+    try {
+        const data = await getAnalyitcsData()
+        return res.status(201).json(data)
+    } catch (error) {
+        console.log(error)
+    }
+}
+
+
+
+export const dailyEnrollmentData= async(startDate, endDate)=>{
+    try {
+
+        const dailyData = await Order.aggregate([
+            {
+                $match:{
+                    createdAt:{
+                        $gte:startDate,
+                        $lte:endDate
+                    }
+                }
+            },
+
+
+            {
+                $group:{
+                    _id:{
+                        $dateToString:{format:"%Y-%m-%d", date:"$createdAt"}
+                    },
+                    enrollments:{$sum:1},
+                    revenue:{$sum:"$totalAmount"}
+                },
+            },
+            {$sort:{_id:1}}
+        ])
+
+
+        const dateArray = getDatesInRange(startDate,endDate)
+
+        return dateArray.map((date)=>{
+            const found = dailyData.find((item)=>item._id===date)
+            return{
+                date,
+                enrollments:found?.enrollments||0,
+                revenue:found?.revenue||0
+            }
+        })
+
+        
+        
+    } catch (error) {
+        console.log(error)
+    }
+
+}
+
+
+function getDatesInRange(startDate, endDate){
+    const dates=[]
+    let currentDate = new Date(startDate)
+
+    while(currentDate<= endDate){
+        dates.push(currentDate.toISOString().split("T")[0]);
+        currentDate.setDate(currentDate.getDate()+1)
+    }
+
+    return dates
+}
+
+
+export const getDailyAnalytcController=async(req,res)=>{
+    try {
+        const{startDate, endDate}= req.query
+
+        if(!startDate || !endDate){
+            return res.status(401).json({
+                message:"Date not found"
+            })
+        }
+
+        const start = new Date(startDate)
+        const end = new Date(endDate)
+
+
+        const data = await dailyEnrollmentData(start, end)
+
+        return res.status(201).json(data)
+    } catch (error) {
+        console.log(error)
+    }
+}
+
+
+// Admin-scoped analytics: only data for this admin's courses
+export const getAdminAnalyticsController = async(req, res)=>{
+    try {
+        const userId = req.user._id;
+
+        // Get only this admin's course IDs
+        const myCourses = await Course.find({ userId }, '_id amount').lean();
+        const myCourseIds = myCourses.map(c => c._id);
+
+        const totalCourses = myCourses.length;
+
+        // Count enrollments and revenue only for this admin's courses
+        const salesData = await Order.aggregate([
+            { $match: { course: { $in: myCourseIds } } },
+            {
+                $group: {
+                    _id: null,
+                    totalEnrollments: { $sum: 1 },
+                    totalRevenue: { $sum: '$totalAmount' }
+                }
+            }
+        ]);
+
+        const {
+            totalEnrollments = 0,
+            totalRevenue = 0
+        } = salesData[0] || {};
+
+        return res.status(200).json({
+            courses: totalCourses,
+            totalEntrollments: totalEnrollments,
+            totalRevenue,
+            users: null // Not relevant per-admin
+        });
+    } catch (error) {
+        console.log(error, "from getAdminAnalyticsController");
+        return res.status(500).json({ message: "Failed to fetch analytics" });
+    }
+}
+
+
+export const getAdminDailyAnalyticsController = async(req, res)=>{
+    try {
+        const userId = req.user._id;
+        const { startDate, endDate } = req.query;
+
+        if(!startDate || !endDate){
+            return res.status(401).json({ message: "Date not found" });
+        }
+
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+
+        // Get only this admin's course IDs
+        const myCourses = await Course.find({ userId }, '_id').lean();
+        const myCourseIds = myCourses.map(c => c._id);
+
+        const dailyData = await Order.aggregate([
+            {
+                $match: {
+                    course: { $in: myCourseIds },
+                    createdAt: { $gte: start, $lte: end }
+                }
+            },
+            {
+                $group: {
+                    _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+                    enrollments: { $sum: 1 },
+                    revenue: { $sum: "$totalAmount" }
+                }
+            },
+            { $sort: { _id: 1 } }
+        ]);
+
+        const dateArray = getDatesInRange(start, end);
+
+        const result = dateArray.map((date) => {
+            const found = dailyData.find((item) => item._id === date);
+            return {
+                date,
+                enrollments: found?.enrollments || 0,
+                revenue: found?.revenue || 0
+            };
+        });
+
+        return res.status(200).json(result);
+    } catch (error) {
+        console.log(error, "from getAdminDailyAnalyticsController");
+        return res.status(500).json({ message: "Failed to fetch daily analytics" });
+    }
+}

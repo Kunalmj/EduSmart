@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "stripe": ["./node_modules/stripe/types/index.d.ts"]
+    }
+  },
+  "exclude": [
+    "node_modules"
+  ]
+}
