@@ -2,14 +2,18 @@ import { getUser, loginApi, logoutApi, registerApi, updateProfileApi } from "@/A
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
+import { useUserStore } from "@/Store/user.store"
 
 export const useRegisterHook = ()=>{
     const navigate =  useNavigate()
+    const queryClient = useQueryClient()
     return useMutation({
         mutationFn:registerApi,
         onSuccess:(data)=>{
             console.log(data)
             toast.success(data.message)
+            // Clear any cached data from a previous session before navigating
+            queryClient.clear()
             navigate("/")
         },
 
@@ -21,10 +25,14 @@ export const useRegisterHook = ()=>{
 
 export const useLoginHook = ()=>{
     const navigate = useNavigate()
+    const queryClient = useQueryClient()
     return useMutation({
         mutationFn:loginApi,
         onSuccess:(data)=>{
             toast.success(data?.message)
+            // ✅ CRITICAL: Clear the entire query cache so the previous user's
+            // cached data (e.g. abc@gmail.com) is wiped before fetching the new user.
+            queryClient.clear()
             navigate('/')
         },
 
@@ -47,10 +55,16 @@ export const useGetUserHook = ()=>{
 
 export const useLoggedOut=()=>{
     const navigate = useNavigate()
+    const queryClient = useQueryClient()
+    const clearUser = useUserStore((state) => state.clearUser)
     return useMutation({
         mutationFn:logoutApi,
         onSuccess:(data)=>{
             toast.success(data?.message)
+            // ✅ Wipe the query cache AND the Zustand user store so
+            // the next person who opens the site starts completely fresh.
+            queryClient.clear()
+            clearUser()
             navigate('/login')
         },
         onError:(err)=>{
