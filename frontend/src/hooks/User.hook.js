@@ -39,7 +39,8 @@ export const useGetUserHook = ()=>{
     return useQuery({
         queryFn:getUser,
         queryKey:['getUser'],
-        retry:false
+        retry:false,
+        staleTime: 5 * 60 * 1000,  // treat user data as fresh for 5 minutes
     })
 }
 

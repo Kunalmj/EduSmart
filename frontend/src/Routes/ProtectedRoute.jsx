@@ -7,7 +7,7 @@ import { Navigate } from "react-router-dom"
 
 export const ProtectedRoutes =({children})=>{
     const setUser = useUserStore((state)=>state.setUser)
-    const {data, isLoading, isError, error} = useGetUserHook()
+    const {data, isLoading, isFetching, isError, error} = useGetUserHook()
 
     
     useEffect(()=>{
@@ -15,8 +15,10 @@ export const ProtectedRoutes =({children})=>{
         setUser(data)
     }
 
-    },[data])
-    if(isLoading){
+    },[data, setUser])
+
+    // Show spinner while loading OR while a background fetch is in-flight (prevents premature redirect)
+    if(isLoading || isFetching){
         return (
              <div className="h-screen w-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
         <div className="flex flex-col items-center gap-4">
@@ -37,15 +39,15 @@ export const ProtectedRoutes =({children})=>{
 
 export const AdminProtectedRoutes = ({children}) => {
     const setUser = useUserStore((state) => state.setUser)
-    const { data, isLoading, isError } = useGetUserHook()
+    const { data, isLoading, isFetching, isError } = useGetUserHook()
 
     useEffect(() => {
         if (data) {
             setUser(data)
         }
-    }, [data])
+    }, [data, setUser])
 
-    if (isLoading) {
+    if (isLoading || isFetching) {
         return (
             <div className="h-screen w-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
                 <div className="flex flex-col items-center gap-4">

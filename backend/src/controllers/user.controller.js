@@ -34,15 +34,17 @@ export const Register = async(req ,res)=>{
             admin: isTeacher || email === ENV.ADMIN
         })
 
-        const token = jwt.sign({userId:newUser._id},ENV.JWT_SECRET )
+        const token = jwt.sign({userId:newUser._id}, ENV.JWT_SECRET, {expiresIn:'7d'})
+
+        const cookieOptions = {maxAge:7*24*60*60*1000, httpOnly:true, secure:true, sameSite:"none"}
 
         if(newUser.admin){
-            return res.status(201).cookie("token", token, {maxAge:1*24*60*60*1000, httpOnly:true, secure:true, sameSite:"none"}).json({
+            return res.status(201).cookie("token", token, cookieOptions).json({
                 message:`Welcome, Teacher ${newUser.fullName}! Your dashboard is ready.`,
             })
         }
 
-        return res.status(201).cookie("token", token, {maxAge:1*24*60*60*1000, httpOnly:true, secure:true, sameSite:"none"}).json({
+        return res.status(201).cookie("token", token, cookieOptions).json({
                 message:`Welcome ${newUser.fullName}! Start exploring courses.`
             })
 
@@ -85,13 +87,13 @@ export const Login = async(req,res)=>{
             await user.save()
         }
 
-        const token = jwt.sign({userId:user._id},ENV.JWT_SECRET )
+        const token = jwt.sign({userId:user._id}, ENV.JWT_SECRET, {expiresIn:'7d'})
 
-        res.cookie("token",token,{
-            maxAge:1*24*60*60*1000,
-            httpOnly:true,
-            secure:true,
-            sameSite:"none"
+        res.cookie("token", token, {
+            maxAge: 7*24*60*60*1000,
+            httpOnly: true,
+            secure: true,
+            sameSite: "none"
         })
 
         if(user.admin){
@@ -135,7 +137,11 @@ export const getUser = async(req,res)=>{
 
 export const logout=async(req,res)=>{
     try {
-        return res.cookie("token","").status(201).json({
+        return res.clearCookie("token", {
+            httpOnly: true,
+            secure: true,
+            sameSite: "none"
+        }).status(201).json({
             message:"User logged out"
         })
     } catch (error) {
