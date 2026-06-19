@@ -9,5 +9,11 @@
       "root": "backend",
       "routePrefix": "/_/backend"
     }
-  }
+  },
+  "rewrites": [
+    {
+      "source": "/((?!_/backend).*)",
+      "destination": "/index.html"
+    }
+  ]
 }

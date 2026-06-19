@@ -18,8 +18,10 @@ const __dirname = path.dirname(__filename)
 
 const app = express()
 
+const clientUrl = ENV.CLIENT_URL ? ENV.CLIENT_URL.replace(/\/$/, "") : "";
+
 app.use(cors({
-    origin: ENV.CLIENT_URL,
+    origin: [clientUrl, "http://localhost:5173"],
     credentials: true
 }))
 app.use(cookieParser())
@@ -28,6 +30,10 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }))
 
 // Serve uploaded videos as static files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')))
+
+app.get('/', (req, res) => {
+    res.json({ message: "EduSmart API is running successfully!" })
+})
 
 app.use('/api', userRoute)
 app.use('/api/course', courseRoute)
