@@ -1,15 +1,11 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { GoogleAIFileManager, FileState } from "@google/generative-ai/server";
 import { Quiz } from "../models/quiz.model.js";
 import { ENV } from "../config/env.js";
 import { Questions } from "../models/question.model.js";
 import { Modules } from "../models/module.model.js";
-import fs from "fs";
-import path from "path";
 
 const genAi = new GoogleGenerativeAI(ENV.GEMINI_API_KEY)
-const model = genAi.getGenerativeModel({model:'gemini-2.5-flash'})
-const fileManager = new GoogleAIFileManager(ENV.GEMINI_API_KEY)
+const model = genAi.getGenerativeModel({model:'gemini-2.0-flash'})
 
 export const checkQuiz = async(req,res)=>{
     try {
@@ -34,8 +30,6 @@ export const checkQuiz = async(req,res)=>{
 
 
 export const generateQuiz = async(req, res)=>{
-    let tempFilePath = null;
-    let uploadResult = null;
     let newQuiz = null;
     try {
         const {moduleId, content} = req.body;
@@ -56,11 +50,11 @@ export const generateQuiz = async(req, res)=>{
             })
         }
 
-        // Fetch module to get the video path
+        // Fetch module to validate it exists
         const moduleDoc = await Modules.findById(moduleId);
-        if(!moduleDoc || !moduleDoc.video){
+        if(!moduleDoc){
             return res.status(404).json({
-                message:"Module or video not found"
+                message:"Module not found"
             })
         }
 
@@ -69,60 +63,34 @@ export const generateQuiz = async(req, res)=>{
             moduleId
         })
 
-        console.log(`[QuizGen] Downloading video from: ${moduleDoc.video}`);
-        // Download video to local temp file
-        tempFilePath = path.join(process.cwd(), `temp-video-${Date.now()}-${Math.floor(Math.random() * 1000)}.mp4`);
-        const response = await fetch(moduleDoc.video);
-        if (!response.ok) {
-            throw new Error(`Failed to fetch video: ${response.statusText}`);
-        }
-        const buffer = Buffer.from(await response.arrayBuffer());
-        await fs.promises.writeFile(tempFilePath, buffer);
+        console.log(`[QuizGen] Generating quiz from content text...`);
 
-        console.log(`[QuizGen] Uploading video to Gemini File API...`);
-        // Upload to Gemini
-        uploadResult = await fileManager.uploadFile(tempFilePath, {
-            mimeType: "video/mp4",
-            displayName: moduleDoc.title || "Module Video",
-        });
+        const prompt = `You are an expert quiz creator. Based on the following course module content, generate exactly 10 multiple-choice questions to test understanding.
 
-        let file = uploadResult.file;
-        console.log(`[QuizGen] File uploaded. URI: ${file.uri}. State: ${file.state}`);
+Module Content:
+"""
+${content}
+"""
 
-        // Poll for ACTIVE state
-        while (file.state === FileState.PROCESSING) {
-            console.log(`[QuizGen] Video is processing... checking again in 5 seconds`);
-            await new Promise((resolve) => setTimeout(resolve, 5000));
-            file = await fileManager.getFile(file.name);
-        }
+Requirements:
+- Each question must have exactly 4 options
+- The correctOption must be one of the 4 options (exact match)
+- Include a clear explanation for each correct answer
+- Questions should test key concepts from the content
 
-        if (file.state !== FileState.ACTIVE) {
-            throw new Error(`Gemini video processing failed with state: ${file.state}`);
-        }
+Return ONLY valid JSON in this exact format, no markdown, no extra text:
+{
+  "questions": [
+    {
+      "question": "string",
+      "options": ["string", "string", "string", "string"],
+      "correctOption": "string",
+      "explanation": "string"
+    }
+  ]
+}`;
 
-        console.log(`[QuizGen] Video is ACTIVE. Generating quiz from video...`);
-
-        const prompt = `Generate 10 technical questions based on this video. Each Question should be multiple choice with 4 options. Return the response in this JSON format, no additional text:
-        {
-        "questions":[
-        {
-        "question":"string",
-        "options":["string", "string", "string", "string"],
-        "correctOption":"string",
-        "explanation":"string"
-        }
-        ]
-        }`;
-
-        const result = await model.generateContent([
-            {
-                fileData: {
-                    fileUri: file.uri,
-                    mimeType: file.mimeType,
-                },
-            },
-            prompt
-        ]);
+        const result = await model.generateContent(prompt);
 
         const text = result.response.text();
         const cleanText = text
@@ -135,7 +103,7 @@ export const generateQuiz = async(req, res)=>{
         try {
             parsed = JSON.parse(cleanText);
         } catch (error) {
-            console.log("failed to parse gemini object", error);
+            console.log("failed to parse gemini response:", cleanText.slice(0, 200));
             await Quiz.findByIdAndDelete(newQuiz._id);
             return res.status(500).json({message:"Quiz cannot be generated due to parsing failure"});
         }
@@ -175,7 +143,7 @@ export const generateQuiz = async(req, res)=>{
             {new:true}
         );
 
-        console.log(`[QuizGen] Quiz generated successfully!`);
+        console.log(`[QuizGen] Quiz generated successfully with ${ids.length} questions!`);
 
         return res.status(201).json({
             message:"Quiz generated"
@@ -190,29 +158,9 @@ export const generateQuiz = async(req, res)=>{
             }
         }
         return res.status(500).json({ message: error?.message || "Failed to generate quiz" });
-    } finally {
-        // Local file cleanup
-        if (tempFilePath) {
-            try {
-                if (fs.existsSync(tempFilePath)) {
-                    await fs.promises.unlink(tempFilePath);
-                    console.log(`[QuizGen] Deleted local temp file: ${tempFilePath}`);
-                }
-            } catch (err) {
-                console.error("[QuizGen] Failed to delete local temp file:", err);
-            }
-        }
-        // Gemini File API cleanup
-        if (uploadResult && uploadResult.file) {
-            try {
-                await fileManager.deleteFile(uploadResult.file.name);
-                console.log(`[QuizGen] Deleted file from Gemini File API: ${uploadResult.file.name}`);
-            } catch (err) {
-                console.error("[QuizGen] Failed to delete file from Gemini File API:", err);
-            }
-        }
     }
 }
+
 
 
 export const getQuiz = async(req,res)=>{
