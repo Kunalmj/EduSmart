@@ -17,9 +17,13 @@ const SearchResult = ({
   ]
 
   return (
-    <div className='min-h-[28vh] bg-zinc-100 border-b border-zinc-200 flex items-center'>
-      <div className='max-w-4xl mx-auto px-6 w-full flex flex-col items-center gap-6'>
+    <div className='relative min-h-[35vh] border-b border-purple-100 flex items-center bg-gradient-to-br from-purple-100 via-indigo-200 to-fuchsia-100 overflow-hidden'>
+      {/* Aesthetic ambient background blur blobs */}
+      <div className='absolute inset-0 overflow-hidden pointer-events-none'>
+        <div className='absolute -top-[20%] -left-[10%] w-[50%] h-[100%] rounded-full bg-purple-200/30 blur-3xl mix-blend-multiply'></div>
+      </div>
 
+      <div className='relative z-10 max-w-4xl mx-auto px-6 w-full flex flex-col items-center gap-6 py-10'>
         {/* Search Bar */}
         <form 
           onSubmit={handleSubmit} 
@@ -52,7 +56,7 @@ const SearchResult = ({
 
           <button
             type='submit'
-            className='px-6 py-3 bg-zinc-800 hover:bg-zinc-900 text-white 
+            className='px-6 py-3 bg-blue-800 hover:bg-blue-900 text-white cursor-pointer
             font-medium rounded-xl transition-colors text-sm'
           >
             Search

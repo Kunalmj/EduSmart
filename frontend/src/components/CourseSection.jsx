@@ -41,35 +41,26 @@ const CourseSection = ({ ActiveSearch }) => {
             <div
               key={item._id}
               onClick={() => navigateSinglecourse(item._id)}
-              className='group bg-white border border-slate-200 rounded-2xl p-6 hover:shadow-xl 
+              className='group bg-white border border-slate-200 rounded-2xl hover:shadow-xl 
                         hover:-translate-y-2 hover:border-slate-300 cursor-pointer transition-all 
-                        duration-300 overflow-hidden max-w-sm mx-auto'
+                        duration-300 overflow-hidden max-w-sm mx-auto flex flex-col'
             >
               {/* Thumbnail */}
-              <div className='relative mb-6'>
+              <div className='relative'>
                 <img 
                   src={item.thumbnail} 
                   alt={item.title}
-                  className='w-full h-48 object-cover rounded-xl group-hover:scale-105 transition-transform duration-300'
+                  className='w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300'
                 />
-                <div className='absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full shadow-lg'>
-                  <Star className='w-4 h-4 text-yellow-500 fill-current inline mr-1' />
-                  <span className='text-sm font-bold text-slate-800'>{item.rating || '4.8'}</span>
-                </div>
               </div>
 
               {/* Content */}
-              <div>
+              <div className='p-6 flex-1 flex flex-col'>
                 <h3 className='font-bold text-xl text-slate-900 leading-tight mb-3 line-clamp-2 group-hover:text-slate-700'>
                   {item.title}
                 </h3>
                 
                 <div className='space-y-3 mb-6'>
-                  <div className='flex items-center gap-2 text-sm text-slate-600'>
-                    <Users className='w-4 h-4' />
-                    <span>{item.enrolled || '1.2k'} students</span>
-                  </div>
-                  
                   <div className='flex items-center gap-2 text-sm text-slate-600'>
                     <Clock className='w-4 h-4' />
                     <span>{item.duration || '12 hours'}</span>

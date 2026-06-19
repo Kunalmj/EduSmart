@@ -19,12 +19,12 @@ const Login = () => {
         
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="w-14 h-14 mx-auto mb-3 rounded-xl bg-indigo-600 text-white flex items-center justify-center text-2xl font-bold">
-            ⚡
+          <div className="w-14 h-14 mx-auto mb-3 rounded-xl text-white flex items-center justify-center text-2xl font-bold">
+            <img src="learnsmart.svg" alt="Logo" className='w-full h-full object-cover' />
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Welcome Back</h1>
           <p className="text-sm text-gray-500 mt-1">
-            Login to continue to your dashboard
+            Login to continue learning
           </p>
         </div>
 

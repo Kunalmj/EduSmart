@@ -13,8 +13,13 @@ export const useCreateQuiz = () => {
             queryClient.invalidateQueries({ queryKey: ['checkQuiz'] })
         },
         onError: (err) => {
+            const status = err?.response?.status
             const msg = err?.response?.data?.message || err?.message || 'Failed to create quiz'
-            toast.error(msg)
+            if (status === 429) {
+                toast.error('⏳ AI quota exceeded — please try again tomorrow. (Resets daily)')
+            } else {
+                toast.error(msg)
+            }
             console.error('Quiz creation error:', err)
         }
     })

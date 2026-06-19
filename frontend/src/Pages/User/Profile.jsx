@@ -52,15 +52,8 @@ const Profile = () => {
   const avatarSrc = previewPhoto || user?.profilePhoto || ''
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      {/* Hero Banner */}
-      <div className="h-48 bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-20">
-          <div className="absolute top-4 left-10 w-32 h-32 bg-white rounded-full blur-3xl"></div>
-          <div className="absolute bottom-0 right-20 w-48 h-48 bg-white rounded-full blur-3xl"></div>
-        </div>
-      </div>
-
+    <div className="min-h-screen bg-gradient-to-r from-white to-blue-400">
+      <div className="h-48 relative overflow-hidden"></div>
       <div className="max-w-4xl mx-auto px-6 -mt-24 pb-16">
         {/* Profile Card */}
         <div className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">

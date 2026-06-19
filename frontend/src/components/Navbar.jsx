@@ -67,23 +67,16 @@ const Navbar = () => {
         className='flex items-center gap-2 cursor-pointer'
         onClick={() => navigate('/')}
       >
-        <div className='w-8 h-8 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center text-white text-sm font-black'>
-          E
+        <div className='w-8 h-8 flex items-center justify-center text-white text-sm font-black'>
+          <img src="learnsmart.svg" alt="Logo" />
         </div>
         <h1 className='text-xl lg:text-2xl font-black text-slate-900 tracking-tight'>
-          Edu<span className='text-indigo-600'>Smart</span>
+          Learn <span className='text-indigo-600'>Smart</span>
         </h1>
       </div>
 
       {/* Right side */}
       <div className='flex items-center gap-4'>
-        {/* Admin Badge */}
-        {user?.admin && (
-          <div className='hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-purple-100 text-purple-700 rounded-full text-xs font-semibold'>
-            <Shield className='w-3.5 h-3.5' />
-            Teacher
-          </div>
-        )}
 
         {/* User Menu */}
         <Popover open={open} onOpenChange={setOpen}>
