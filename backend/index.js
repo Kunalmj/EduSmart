@@ -38,10 +38,16 @@ app.use('/api/payment', paymentRoute)
 app.use('/api/analytic', analyticRoute)
 
 
-const server = app.listen(ENV.PORT, () => {
-    console.log("server started on port", ENV.PORT)
+let server;
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+    server = app.listen(ENV.PORT, () => {
+        console.log("server started on port", ENV.PORT)
+        connectDB()
+    })
+    // 10 minute timeout for large video uploads
+    server.timeout = 10 * 60 * 1000
+} else {
     connectDB()
-})
+}
 
-// 10 minute timeout for large video uploads
-server.timeout = 10 * 60 * 1000
+export default app
